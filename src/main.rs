@@ -7,11 +7,13 @@ use sdl2::event::Event;
 use gfx_gl::*;
 use std::ffi::CString;
 use gfx_gl::types::*;
+use std::net::{UdpSocket};
 // use cgmath::{Deg, Matrix, Matrix3, Matrix4, Point3, Vector3, Vector4, SquareMatrix};
 
 mod shaders;
 mod timers;
 mod skills;
+mod threads;
 
 fn build_circle_sample(gl: &Gl) -> (GLuint, usize) {
     let mut counter = 2.0 * std::f32::consts::PI;
@@ -214,6 +216,19 @@ fn main() {
     // println!("{:?}", 23 as f32 / 11 as f32);
     let mut ft = timer.frame_time();
 
+    let mut dummy_thread = threads::new();
+    let network_source = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
+    network_source.set_nonblocking(true).expect("couldn't set nonblocking");
+
+    dummy_thread.run(move || {
+        let mut buf: Vec<u8> = vec![0; 128];
+        let recr = network_source.recv_from(&mut buf);
+
+        if recr.is_ok() {
+            println!("{:?}", String::from_utf8(buf).unwrap());
+        }
+    });
+
     while !exit {
 
         unsafe {
@@ -255,7 +270,7 @@ fn main() {
 
                     Event::Quit {..} => { exit = true; },
 
-                    Event::MouseMotion {xrel, yrel, timestamp, ..} => {
+                    Event::MouseMotion {xrel, yrel, ..} => {
                         if on_fire {
                             line_data[3] += xrel as f32;
                             line_data[4] -= yrel as f32;
