@@ -1,11 +1,17 @@
 [package]
 name = "rust-chunk"
 version = "0.0.1-dev"
+authors = ["arthurnum <arthurnum@gmail.com>"]
 
 [dependencies]
 sdl2 = "0.31.0"
 gfx = "0.17.1"
 gfx_gl = "0.4.0"
 gl = "0.6.0"
+
+# 'collision' is an extension of 'cgmath'
 cgmath = "0.16.0"
+collision = "0.14.0"
+
 time = "0.1.39"
+chunk-protocol = { git = "https://github.com/arthurnum/chunk-protocol" }

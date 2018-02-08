@@ -1,19 +1,24 @@
 extern crate sdl2;
 extern crate gfx_gl;
-extern crate cgmath;
 extern crate time;
+extern crate chunk_protocol as protocol;
+extern crate cgmath;
+extern crate collision;
 
 use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 use gfx_gl::*;
 use std::ffi::CString;
 use gfx_gl::types::*;
 use std::net::{UdpSocket};
+use std::sync::{Arc, Mutex};
 // use cgmath::{Deg, Matrix, Matrix3, Matrix4, Point3, Vector3, Vector4, SquareMatrix};
 
 mod shaders;
 mod timers;
 mod skills;
 mod threads;
+mod rooms_ui;
 
 fn build_circle_sample(gl: &Gl) -> (GLuint, usize) {
     let mut counter = 2.0 * std::f32::consts::PI;
@@ -220,14 +225,20 @@ fn main() {
     let network_source = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
     network_source.set_nonblocking(true).expect("couldn't set nonblocking");
 
+    let arc_network_source = Arc::new(network_source);
+    let shared_network_source = arc_network_source.clone();
+
     dummy_thread.run(move || {
         let mut buf: Vec<u8> = vec![0; 128];
-        let recr = network_source.recv_from(&mut buf);
+        let recr = shared_network_source.recv_from(&mut buf);
 
         if recr.is_ok() {
             println!("{:?}", String::from_utf8(buf).unwrap());
         }
     });
+
+    video_subsys.text_input().start();
+    let mut user_message = String::with_capacity(256);
 
     while !exit {
 
@@ -259,6 +270,8 @@ fn main() {
             println!("{:?}", target);
             target = death_ray.apply(&target, &(ft as f32));
         }
+
+        let roomui = rooms_ui::new_room_ui(10, 390, 100, 100);
 
         match event_pump.poll_event() {
             Some(event) => {
@@ -293,8 +306,31 @@ fn main() {
                         }
                     },
 
-                    Event::MouseButtonUp { .. } => {
+                    Event::MouseButtonUp { x, y, .. } => {
                         on_fire = false;
+                        println!("Mouse over room? {:?}", roomui.contains(x as u32, y as u32));
+                    }
+
+                    Event::TextInput { text, .. } => {
+                        user_message.push_str(&text);
+                    }
+
+                    Event::KeyUp { keycode, .. } => {
+                        match keycode {
+                            Some(code) => {
+                                match code {
+                                    Keycode::Return => {
+                                        let msg = protocol::new_string_message(user_message.clone());
+                                        arc_network_source.send_to(&msg.pack(), "127.0.0.1:45000");
+                                        user_message.clear();
+                                    }
+
+                                    _ => ()
+                                }
+                            }
+
+                            None => ()
+                        }
                     }
 
                     _ => { println!("{:?}", event); }
