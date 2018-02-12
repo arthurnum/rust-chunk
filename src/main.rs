@@ -13,6 +13,7 @@ use gfx_gl::types::*;
 use std::net::{UdpSocket};
 use std::sync::{Arc, Mutex};
 // use cgmath::{Deg, Matrix, Matrix3, Matrix4, Point3, Vector3, Vector4, SquareMatrix};
+use protocol::BaseMessage;
 
 mod shaders;
 mod timers;
@@ -225,6 +226,13 @@ fn main() {
     let network_source = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
     network_source.set_nonblocking(true).expect("couldn't set nonblocking");
 
+    // Connect to the server
+    {
+        let msg = protocol::AddToListenersRequestMessage::new();
+        let buf = msg.pack();
+        network_source.send_to(&buf, "127.0.0.1:45000");
+    }
+
     let arc_network_source = Arc::new(network_source);
     let shared_network_source = arc_network_source.clone();
 
@@ -343,4 +351,9 @@ fn main() {
         window.gl_swap_window();
 
     }
+
+    // Disonnect from the server
+    let msg = protocol::RemoveFromListenersMessage::new();
+    let buf = msg.pack();
+    arc_network_source.send_to(&buf, "127.0.0.1:45000");
 }
