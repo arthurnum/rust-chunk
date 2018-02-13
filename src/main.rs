@@ -8,18 +8,20 @@ extern crate collision;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use gfx_gl::*;
-use std::ffi::CString;
 use gfx_gl::types::*;
+use std::ffi::CString;
 use std::net::{UdpSocket};
 use std::sync::{Arc, Mutex};
 // use cgmath::{Deg, Matrix, Matrix3, Matrix4, Point3, Vector3, Vector4, SquareMatrix};
 use protocol::BaseMessage;
+use protocol::enums::*;
 
 mod shaders;
 mod timers;
 mod skills;
 mod threads;
 mod rooms_ui;
+mod graphics;
 
 fn build_circle_sample(gl: &Gl) -> (GLuint, usize) {
     let mut counter = 2.0 * std::f32::consts::PI;
@@ -93,31 +95,6 @@ fn build_dynamic_line_sample(gl: &Gl) -> (GLuint, GLuint, Vec<f32>) {
     }
 }
 
-fn build_rectangle_sample(gl: &Gl) -> GLuint {
-    unsafe {
-        let mut vao: GLuint = 0;
-        gl.GenVertexArrays(1, &mut vao);
-        gl.BindVertexArray(vao);
-
-        let mut vbo: GLuint = 0;
-        gl.GenBuffers(1, &mut vbo);
-        gl.BindBuffer(ARRAY_BUFFER, vbo);
-
-        let vertices: [f32; 12] = [
-            10.0, 10.0, 1.0,
-            110.0, 10.0, 1.0,
-            10.0, 110.0, 1.0,
-            110.0, 110.0, 1.0,
-        ];
-
-        gl.BufferData(ARRAY_BUFFER, 4*12, std::mem::transmute(&vertices[0]), STATIC_DRAW);
-
-        gl.EnableVertexAttribArray(0);
-        gl.VertexAttribPointer(0, 3, FLOAT, FALSE, 0, std::ptr::null());
-        vao
-    }
-}
-
 fn main() {
     let sdl_context = sdl2::init().unwrap();
 
@@ -153,7 +130,6 @@ fn main() {
 
     let orthomatrix = ortho2d(0.0, 600.0, 0.0, 400.0);
 
-    let vao = build_rectangle_sample(&gl);
     let (line_vao, line_vbo, mut line_data) = build_dynamic_line_sample(&gl);
     let (cs_vao, cs_len) = build_circle_sample(&gl);
 
@@ -219,10 +195,8 @@ fn main() {
     let mut target = 1_000_000.0;
     let death_ray = skills::DeathRay { damage: 150000.0, freq: 500.0 };
 
-    // println!("{:?}", 23 as f32 / 11 as f32);
     let mut ft = timer.frame_time();
 
-    let mut dummy_thread = threads::new();
     let network_source = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
     network_source.set_nonblocking(true).expect("couldn't set nonblocking");
 
@@ -234,21 +208,44 @@ fn main() {
     }
 
     let arc_network_source = Arc::new(network_source);
-    let shared_network_source = arc_network_source.clone();
-
-    dummy_thread.run(move || {
-        let mut buf: Vec<u8> = vec![0; 128];
-        let recr = shared_network_source.recv_from(&mut buf);
-
-        if recr.is_ok() {
-            println!("{:?}", String::from_utf8(buf).unwrap());
-        }
-    });
 
     video_subsys.text_input().start();
     let mut user_message = String::with_capacity(256);
 
+    // let mut buffer = String::new();
+    // std::io::stdin().read_line(&mut buffer).unwrap();
+
+    let mut rooms = rooms_ui::RoomUICollection::new(4);
+    for mut room in rooms.each_mut() {
+        let gfx = graphics::Gfx::build_rectangle_sample(&gl, &room.calc_vertices());
+        room.gfx = Some(gfx);
+    }
+
     while !exit {
+
+        let mut buf: Vec<u8> = vec![0; 128];
+        let recr = arc_network_source.recv_from(&mut buf);
+
+        if recr.is_ok() {
+            match protocol::get_message_type(&buf) {
+                Ok(msg_type) => {
+                    match msg_type {
+                        MessageType::RoomStatus => {
+                            let msg = protocol::RoomStatusMessage::unpack(&buf);
+                            for mut room in rooms.each_mut() {
+                                if room.number() == msg.number() {
+                                    if msg.is_active() { room.activate(); } else { room.deactivate(); }
+                                }
+                            }
+                        }
+
+                        _ => ()
+                    }
+                }
+
+                Err(_) => ()
+            }
+        }
 
         unsafe {
             gl.ClearColor(0.05, 0.05, 0.1, 1.0);
@@ -261,8 +258,9 @@ fn main() {
             ul = gl.GetUniformLocation(program.id, death_ray_k_uniform.to_bytes().as_ptr() as *const i8);
             gl.Uniform1f(ul, timer.elapsed() as f32);
 
-            gl.BindVertexArray(vao);
-            gl.DrawArrays(TRIANGLE_STRIP, 0, 4);
+            for room in rooms.each() {
+                if room.is_active() { room.draw(); }
+            }
 
             if on_fire {
                 gl.BindVertexArray(line_vao);
@@ -278,8 +276,6 @@ fn main() {
             println!("{:?}", target);
             target = death_ray.apply(&target, &(ft as f32));
         }
-
-        let roomui = rooms_ui::new_room_ui(10, 390, 100, 100);
 
         match event_pump.poll_event() {
             Some(event) => {
@@ -316,7 +312,6 @@ fn main() {
 
                     Event::MouseButtonUp { x, y, .. } => {
                         on_fire = false;
-                        println!("Mouse over room? {:?}", roomui.contains(x as u32, y as u32));
                     }
 
                     Event::TextInput { text, .. } => {
@@ -355,5 +350,5 @@ fn main() {
     // Disonnect from the server
     let msg = protocol::RemoveFromListenersMessage::new();
     let buf = msg.pack();
-    arc_network_source.send_to(&buf, "127.0.0.1:45000");
+    arc_network_source.send_to(&buf, "127.0.0.1:45000").unwrap();
 }
