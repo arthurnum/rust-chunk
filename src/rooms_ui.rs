@@ -28,6 +28,10 @@ impl RoomUICollection {
     pub fn each_mut(&mut self) -> ::std::slice::IterMut<RoomUI> {
         self.rooms.iter_mut()
     }
+
+    pub fn find_by_coords(&self, x: u32, y: u32) -> Option<&RoomUI> {
+        self.each().find(|&room| room.is_active() && room.contains(x, y) )
+    }
 }
 
 pub struct RoomUI {
@@ -64,7 +68,7 @@ impl RoomUI {
     }
 
     pub fn is_active(&self) -> bool { self.is_active }
-    pub fn number(&self) -> &u8 { &self.number }
+    pub fn number(&self) -> u8 { self.number }
     pub fn activate(&mut self) { self.is_active = true; }
     pub fn deactivate(&mut self) { self.is_active = false; }
 }

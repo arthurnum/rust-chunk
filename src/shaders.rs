@@ -1,18 +1,18 @@
 use gfx_gl::*;
 
-pub struct Shader<'a> {
+pub struct Shader {
     pub id: u32,
     pub vs: u32,
     pub fs: u32,
-    gl: &'a Gl
+    gl: Box<Gl>
 }
 
-pub fn new<'a>(gl: &'a Gl) -> Box<Shader> {
+pub fn new(gl: &Gl) -> Box<Shader> {
     Box::new(Shader {
         id: unsafe {
             gl.CreateProgram()
         },
-        gl: gl,
+        gl: Box::new(gl.clone()),
         vs: 0,
         fs: 0
     })
@@ -44,15 +44,15 @@ fn build_shader(gl: &Gl, type_: u32, source: &[u8]) -> u32 {
     }
 }
 
-impl<'a> Shader<'a> {
-    pub fn vertex_shader(&mut self, source: &[u8]) -> &mut Shader<'a> {
+impl Shader {
+    pub fn vertex_shader(&mut self, source: &[u8]) -> &mut Shader {
         println!("##### Vertex Shader #####");
         self.vs = build_shader(&self.gl, VERTEX_SHADER, &source);
         shader_log(&self.gl, &self.vs);
         self
     }
 
-    pub fn fragment_shader(&mut self, source: &[u8]) -> &mut Shader<'a> {
+    pub fn fragment_shader(&mut self, source: &[u8]) -> &mut Shader {
         println!("##### Fragment Shader #####");
         self.fs = build_shader(&self.gl, FRAGMENT_SHADER, &source);
         shader_log(&self.gl, &self.fs);
