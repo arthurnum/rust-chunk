@@ -23,7 +23,7 @@ fn shader_log(gl: &Gl, id: &u32) {
         let mut compile_status: i32 = 0;
         gl.GetShaderiv(*id, COMPILE_STATUS, &mut compile_status);
         println!("Compile status: {:?}", compile_status > 0);
-        let mut log: [i8; 512] = [0; 512];
+        let mut log: Vec<i8> = vec![0; 512];
         let log_ptr: *mut i8 = &mut log[0];
         let length: *mut i32 = &mut 0;
         gl.GetShaderInfoLog(*id, 512, length, log_ptr);
@@ -69,7 +69,7 @@ impl Shader {
             let mut link_status: i32 = 0;
             self.gl.GetProgramiv(self.id, LINK_STATUS, &mut link_status);
             println!("Link status: {:?}", link_status > 0);
-            let mut log: [i8; 512] = [0; 512];
+            let mut log: Vec<i8> = vec![0; 512];
             let log_ptr: *mut i8 = &mut log[0];
             let length: *mut i32 = &mut 0;
             self.gl.GetProgramInfoLog(self.id, 512, length, log_ptr);
