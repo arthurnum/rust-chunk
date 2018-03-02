@@ -31,7 +31,7 @@ impl Gfx {
         }
     }
 
-    pub fn build_circle_sample(gl: &Gl, r: f32, d: u32) -> Gfx {
+    pub fn build_circle_sample(gl: &Gl, r: f32, mut d: u32) -> Gfx {
         let mut counter = 2.0 * PI;
         let step = counter / d as f32;
         let mut data: Vec<f32> = Vec::new();
@@ -42,7 +42,8 @@ impl Gfx {
                 1.0
                 ]);
             counter -= step;
-            if counter < step {
+            d -= 1;
+            if d < 1 {
                 data.append(&mut vec![
                     f32::sin(0.0) * r,
                     f32::cos(0.0) * r,

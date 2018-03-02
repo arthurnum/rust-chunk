@@ -8,17 +8,20 @@ extern crate collision;
 use sdl2::event::Event;
 // use sdl2::keyboard::Keycode;
 use gfx_gl::*;
-use gfx_gl::types::*;
+// use gfx_gl::types::*;
 use std::net::{UdpSocket};
 use protocol::enums::MessageType;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 mod shaders;
 mod timers;
-mod skills;
-mod threads;
+// mod skills;
+// mod threads;
 mod rooms_ui;
 mod graphics;
 mod scene_context;
+mod objects;
 
 use scene_context::{SceneContext, MainSceneContext};
 
@@ -71,7 +74,6 @@ fn main() {
     let mut exit = false;
 
     let mut timer = timers::new();
-    let death_ray = skills::DeathRay { damage: 150000.0, freq: 500.0 };
 
     let mut ft = timer.frame_time();
 
@@ -85,12 +87,12 @@ fn main() {
         network_source.send_to(&buf, "127.0.0.1:45000").unwrap();
     }
 
-    let mut active_scene_context: Box<SceneContext> = Box::new(MainSceneContext::new(&gl));
+    let mut active_scene_context: Rc<RefCell<SceneContext>> = Rc::new(RefCell::new(MainSceneContext::new(&gl)));
 
     while !exit {
 
-        active_scene_context.update(&network_source);
-        active_scene_context.render();
+        active_scene_context.borrow_mut().update(&network_source);
+        active_scene_context.borrow_mut().render();
 
         ft = timer.frame_time();
 
@@ -104,12 +106,17 @@ fn main() {
                     _ => ()
                 }
 
-                active_scene_context.user_input(event);
+                active_scene_context.borrow_mut().user_input(event, &network_source);
             },
             None => ()
         }
 
         window.gl_swap_window();
+
+        let context = active_scene_context.borrow().switch_context();
+        if context.is_some() {
+            active_scene_context = context.unwrap();
+        }
 
     }
 
