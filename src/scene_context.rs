@@ -1,5 +1,6 @@
 use gfx_gl::*;
 use shaders::{self, Shader};
+use shaders::smpl;
 use std::ffi::CString;
 use cgmath::{ortho, Matrix4};
 use rooms_ui::RoomUICollection;
@@ -25,29 +26,13 @@ pub struct MainSceneContext {
 impl MainSceneContext {
     pub fn new(gl: &Gl) -> MainSceneContext {
         let mut program = shaders::new(&gl);
-        let vsource = CString::new("
-            #version 410 core
-            layout(location=0) in vec3 pos;
 
-            uniform mat4 supermatrix;
-
-            void main()
-            {
-                gl_Position = supermatrix * vec4(pos, 1.0);
-            }
-        ").unwrap();
+        let vsource = CString::new(smpl::DEFAULT_VERTEX).unwrap();
         let vsb = vsource.to_bytes();
-        let fsource = CString::new("
-            #version 410 core
 
-            out vec4 out_color;
-
-            void main()
-            {
-                out_color = vec4(1.0, 1.0, 0.4, 1.0);
-            }
-        ").unwrap();
+        let fsource = CString::new(smpl::YELLOW_FRAGMENT).unwrap();
         let fsb = fsource.to_bytes();
+
         program.vertex_shader(vsb)
                .fragment_shader(fsb)
                .link();

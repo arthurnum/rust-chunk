@@ -1,5 +1,7 @@
 use gfx_gl::*;
 
+pub mod smpl;
+
 pub struct Shader {
     pub id: u32,
     pub vs: u32,
