@@ -22,42 +22,6 @@ mod scene_context;
 
 use scene_context::{SceneContext, MainSceneContext};
 
-fn build_circle_sample(gl: &Gl) -> (GLuint, usize) {
-    let mut counter = 2.0 * std::f32::consts::PI;
-    let mut data: Vec<f32> = Vec::new();
-    loop {
-        data.append(&mut vec![
-            300.0 + counter.sin() * 100.0,
-            200.0 + counter.cos() * 100.0,
-            1.0
-            ]);
-        counter -= 0.15;
-        if counter < 0.0 {
-            data.append(&mut vec![
-                300.0 + f32::sin(0.0) * 100.0,
-                200.0 + f32::cos(0.0) * 100.0,
-                1.0
-                ]);
-            break;
-        }
-    }
-    unsafe {
-        let mut vao: GLuint = 0;
-        gl.GenVertexArrays(1, &mut vao);
-        gl.BindVertexArray(vao);
-
-        let mut vbo: GLuint = 0;
-        gl.GenBuffers(1, &mut vbo);
-        gl.BindBuffer(ARRAY_BUFFER, vbo);
-
-        gl.BufferData(ARRAY_BUFFER, 4*data.len() as isize, std::mem::transmute(data.as_ptr()), STATIC_DRAW);
-
-        gl.EnableVertexAttribArray(0);
-        gl.VertexAttribPointer(0, 3, FLOAT, FALSE, 0, std::ptr::null());
-        (vao, data.len() / 3)
-    }
-}
-
 fn ortho2d(left: f32, right: f32, bottom: f32, top: f32) -> Vec<f32> {
     let a1 = 2.0 / (right - left);
     let a2 = 2.0 / (top - bottom);
@@ -69,29 +33,6 @@ fn ortho2d(left: f32, right: f32, bottom: f32, top: f32) -> Vec<f32> {
          0.0, a2, 0.0, 0.0,
          0.0, 0.0, a3, 0.0,
          tx, ty, tz, 1.0]
-}
-
-fn build_dynamic_line_sample(gl: &Gl) -> (GLuint, GLuint, Vec<f32>) {
-    unsafe {
-        let mut vao: GLuint = 0;
-        gl.GenVertexArrays(1, &mut vao);
-        gl.BindVertexArray(vao);
-
-        let mut vbo: GLuint = 0;
-        gl.GenBuffers(1, &mut vbo);
-        gl.BindBuffer(ARRAY_BUFFER, vbo);
-
-        let vertices = vec![
-            300.0, 200.0, 1.0,
-            300.0, 200.0, 1.0,
-        ];
-
-        gl.BufferData(ARRAY_BUFFER, 4*6, std::mem::transmute(vertices.as_ptr()), DYNAMIC_DRAW);
-
-        gl.EnableVertexAttribArray(0);
-        gl.VertexAttribPointer(0, 3, FLOAT, FALSE, 0, std::ptr::null());
-        (vao, vbo, vertices)
-    }
 }
 
 fn main() {
