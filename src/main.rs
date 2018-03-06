@@ -13,6 +13,7 @@ use std::net::{UdpSocket};
 use protocol::enums::MessageType;
 use std::rc::Rc;
 use std::cell::RefCell;
+use context::*;
 
 mod shaders;
 mod timers;
@@ -20,10 +21,8 @@ mod timers;
 // mod threads;
 mod rooms_ui;
 mod graphics;
-mod scene_context;
+mod context;
 mod objects;
-
-use scene_context::{SceneContext, MainSceneContext};
 
 fn ortho2d(left: f32, right: f32, bottom: f32, top: f32) -> Vec<f32> {
     let a1 = 2.0 / (right - left);
