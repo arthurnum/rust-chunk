@@ -24,11 +24,12 @@ pub struct MainSceneContext {
     gl: Box<Gl>,
     rooms: Box<RoomUICollection>,
     switch_context: Option<RefSceneContext>,
-    timer: Box<timers::Timer>
+    timer: Box<timers::Timer>,
+    network: Rc<UdpSocket>
 }
 
 impl MainSceneContext {
-    pub fn new(gl: &Gl) -> MainSceneContext {
+    pub fn new(gl: &Gl, network: &Rc<UdpSocket>) -> MainSceneContext {
         let mut program = shaders::new(&gl);
 
         let vsource = CString::new(smpl::DEFAULT_VERTEX).unwrap();
@@ -64,7 +65,8 @@ impl MainSceneContext {
             gl: Box::new(gl.clone()),
             rooms: rooms,
             switch_context: None,
-            timer: timers::new()
+            timer: timers::new(),
+            network: network.clone()
         }
     }
 }
@@ -89,9 +91,9 @@ impl SceneContext for MainSceneContext {
         }
     }
 
-    fn update(&mut self, network: &UdpSocket) {
+    fn update(&mut self) {
         let mut buf: Vec<u8> = vec![0; 128];
-        let recr = network.recv_from(&mut buf);
+        let recr = self.network.recv_from(&mut buf);
 
         if recr.is_ok() {
             match protocol::unpack(&buf) {
@@ -108,7 +110,7 @@ impl SceneContext for MainSceneContext {
         }
     }
 
-    fn user_input(&mut self, event: Event, network: &UdpSocket) {
+    fn user_input(&mut self, event: Event) {
         match event {
 
             Event::MouseButtonUp { x, y, .. } => {
@@ -117,9 +119,9 @@ impl SceneContext for MainSceneContext {
                         println!("Room {:?}", room.number());
                         let msg = MessageType::MemberIn(room.number());
                         let buf = protocol::pack(&msg);
-                        network.send_to(&buf, "127.0.0.1:45000").unwrap();
+                        self.network.send_to(&buf, "127.0.0.1:45000").unwrap();
 
-                        self.switch_context = Some(Rc::new(RefCell::new(RoomSceneContext::new(&self.gl))));
+                        self.switch_context = Some(Rc::new(RefCell::new(RoomSceneContext::new(&self.gl, &self.network))));
                     }
 
                     None => ()

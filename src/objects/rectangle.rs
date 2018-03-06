@@ -19,7 +19,7 @@ impl Rectangle {
         let vertices: Vec<f32> = aabb.to_corners().iter().flat_map( |&point|
             vec![point.x.clone() as f32, point.y.clone() as f32, 1.0]
         ).collect();
-        println!("{:?}", vertices);
+
         Rectangle {
             pos: Point2 { x: x, y: y },
             aabb: aabb,

@@ -76,8 +76,9 @@ fn main() {
 
     let mut ft = timer.frame_time();
 
-    let network_source = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
-    network_source.set_nonblocking(true).expect("couldn't set nonblocking");
+    let socket = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
+    socket.set_nonblocking(true).expect("couldn't set nonblocking");
+    let network_source = Rc::new(socket);
 
     // Connect to the server
     {
@@ -86,11 +87,11 @@ fn main() {
         network_source.send_to(&buf, "127.0.0.1:45000").unwrap();
     }
 
-    let mut active_scene_context: Rc<RefCell<SceneContext>> = Rc::new(RefCell::new(MainSceneContext::new(&gl)));
+    let mut active_scene_context: RefSceneContext = Rc::new(RefCell::new(MainSceneContext::new(&gl, &network_source)));
 
     while !exit {
 
-        active_scene_context.borrow_mut().update(&network_source);
+        active_scene_context.borrow_mut().update();
         active_scene_context.borrow_mut().render();
 
         ft = timer.frame_time();
@@ -105,7 +106,7 @@ fn main() {
                     _ => ()
                 }
 
-                active_scene_context.borrow_mut().user_input(event, &network_source);
+                active_scene_context.borrow_mut().user_input(event);
             },
             None => ()
         }

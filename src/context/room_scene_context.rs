@@ -7,16 +7,18 @@ use gfx_gl::*;
 use sdl2::event::Event;
 use std::ffi::CString;
 use std::net::UdpSocket;
+use std::rc::Rc;
 
 pub struct RoomSceneContext {
     circle: Circle,
     program: Box<Shader>,
     matrix: Matrix4<f32>,
-    gl: Box<Gl>
+    gl: Box<Gl>,
+    network: Rc<UdpSocket>
 }
 
 impl RoomSceneContext {
-    pub fn new(gl: &Gl) -> RoomSceneContext {
+    pub fn new(gl: &Gl, network: &Rc<UdpSocket>) -> RoomSceneContext {
         let circle = Circle::new(gl, 0f32, 0f32, 10f32);
 
         let mut program = shaders::new(&gl);
@@ -37,7 +39,8 @@ impl RoomSceneContext {
             circle: circle,
             program: program,
             matrix: ortho(0.0, 600.0, 0.0, 400.0, -1.0, 1.0) * translation,
-            gl: Box::new(gl.clone())
+            gl: Box::new(gl.clone()),
+            network: network.clone()
         }
     }
 }
@@ -55,7 +58,7 @@ impl SceneContext for RoomSceneContext {
         }
     }
 
-    fn update(&mut self, network: &UdpSocket) {}
-    fn user_input(&mut self, event: Event, network: &UdpSocket) {}
+    fn update(&mut self) {}
+    fn user_input(&mut self, event: Event) {}
     fn switch_context(&self) -> Option<RefSceneContext> { None }
 }
