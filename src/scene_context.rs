@@ -2,16 +2,17 @@ use gfx_gl::*;
 use shaders::{self, Shader};
 use shaders::smpl;
 use std::ffi::CString;
+use std::net::{UdpSocket};
+use std::rc::Rc;
+use std::cell::RefCell;
 use cgmath::*;
 use rooms_ui::RoomUICollection;
 use graphics;
-use std::net::{UdpSocket};
 use protocol;
 use protocol::enums::MessageType;
 use sdl2::event::Event;
-use std::rc::Rc;
-use std::cell::RefCell;
 use objects::*;
+use timers;
 
 type RefSceneContext = Rc<RefCell<SceneContext>>;
 
@@ -24,10 +25,13 @@ pub trait SceneContext {
 
 pub struct MainSceneContext {
     program: Box<Shader>,
+    background_program: Box<Shader>,
+    background: Box<Rectangle>,
     matrix: Matrix4<f32>,
     gl: Box<Gl>,
     rooms: Box<RoomUICollection>,
-    switch_context: Option<RefSceneContext>
+    switch_context: Option<RefSceneContext>,
+    timer: Box<timers::Timer>
 }
 
 impl MainSceneContext {
@@ -44,6 +48,15 @@ impl MainSceneContext {
                .fragment_shader(fsb)
                .link();
 
+        let mut background_program = shaders::new(&gl);
+
+        let fsource = CString::new(smpl::BACKGROUND_FRAGMENT).unwrap();
+        let fsb = fsource.to_bytes();
+
+        background_program.vertex_shader(vsb)
+               .fragment_shader(fsb)
+               .link();
+
         let mut rooms = RoomUICollection::new(4);
         for mut room in rooms.each_mut() {
            let gfx = graphics::Gfx::build_rectangle_sample(&gl, &room.calc_vertices());
@@ -52,26 +65,30 @@ impl MainSceneContext {
 
         MainSceneContext {
             program: program,
+            background_program: background_program,
+            background: Box::new(Rectangle::new(gl, 300f32, 200f32, 600f32, 400f32)),
             matrix: ortho(0.0, 600.0, 0.0, 400.0, -1.0, 1.0),
             gl: Box::new(gl.clone()),
             rooms: rooms,
-            switch_context: None
+            switch_context: None,
+            timer: timers::new()
         }
     }
 }
 
 impl SceneContext for MainSceneContext {
     fn render(&self) {
-        let matrix_uniform_name = CString::new("supermatrix").unwrap();
-
         unsafe {
             self.gl.ClearColor(0.05, 0.05, 0.1, 1.0);
             self.gl.Clear(COLOR_BUFFER_BIT);
 
+            self.background_program.use_program();
+            self.background_program.uniform_matrix4fv("supermatrix", &self.matrix);
+            self.background_program.uniform1f("time", self.timer.elapsed() as f32 / 10000f32);
+            self.background.draw();
+
             self.program.use_program();
-            let ul = self.gl.GetUniformLocation(self.program.id, matrix_uniform_name.to_bytes().as_ptr() as *const i8);
-            let matrix_slice: &[f32; 16] = self.matrix.as_ref();
-            self.gl.UniformMatrix4fv(ul, 1, FALSE, matrix_slice.as_ptr());
+            self.program.uniform_matrix4fv("supermatrix", &self.matrix);
 
             for room in self.rooms.each() {
                 if room.is_active() { room.draw(); }
@@ -164,16 +181,12 @@ impl RoomSceneContext {
 
 impl SceneContext for RoomSceneContext {
     fn render(&self) {
-        let matrix_uniform_name = CString::new("supermatrix").unwrap();
-
         unsafe {
             self.gl.ClearColor(0.05, 0.05, 0.1, 1.0);
             self.gl.Clear(COLOR_BUFFER_BIT);
 
             self.program.use_program();
-            let ul = self.gl.GetUniformLocation(self.program.id, matrix_uniform_name.to_bytes().as_ptr() as *const i8);
-            let matrix_slice: &[f32; 16] = self.matrix.as_ref();
-            self.gl.UniformMatrix4fv(ul, 1, FALSE, matrix_slice.as_ptr());
+            self.program.uniform_matrix4fv("supermatrix", &self.matrix);
 
             self.circle.draw();
         }

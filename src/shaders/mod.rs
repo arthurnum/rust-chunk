@@ -1,4 +1,6 @@
 use gfx_gl::*;
+use cgmath::*;
+use std::ffi::CString;
 
 pub mod smpl;
 
@@ -85,6 +87,34 @@ impl Shader {
     pub fn use_program(&self) {
         unsafe {
             self.gl.UseProgram(self.id);
+        }
+    }
+
+    pub fn get_uniform_location(&self, name: &str) -> i32 {
+        let uniform_name = CString::new(name).unwrap();
+        unsafe {
+            self.gl.GetUniformLocation(self.id, uniform_name.to_bytes().as_ptr() as *const i8)
+        }
+    }
+
+    pub fn uniform1f(&self, name: &str, val: f32) {
+        unsafe {
+            let location = self.get_uniform_location(name);
+            self.gl.Uniform1f(location, val);
+        }
+    }
+
+    pub fn uniform2fv(&self, name: &str, vector: &Vector2<f32>) {
+        unsafe {
+            let location = self.get_uniform_location(name);
+            self.gl.Uniform2fv(location, 1, vector.as_ptr());
+        }
+    }
+
+    pub fn uniform_matrix4fv(&self, name: &str, matrix: &Matrix4<f32>) {
+        unsafe {
+            let location = self.get_uniform_location(name);
+            self.gl.UniformMatrix4fv(location, 1, FALSE, matrix.as_ptr());
         }
     }
 }
