@@ -31,6 +31,6 @@ pub const BACKGROUND_FRAGMENT: &'static str = "
     void main()
     {
         vec2 uv = gl_FragCoord.xy / vec2(600.0, 400.0);
-        out_color = vec4(uv.x / 2.0 + 0.5, uv.y / 2.0 + 0.5, sin(time), 1.0);
+        out_color = vec4(uv.x / 2.0 + 0.5, uv.y / 2.0 + 0.5, abs(sin(time)), 1.0);
     }
 ";

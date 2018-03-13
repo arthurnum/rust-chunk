@@ -51,7 +51,7 @@ impl MainSceneContext {
                .fragment_shader(fsb)
                .link();
 
-        let mut rooms = RoomUICollection::new(4);
+        let mut rooms = RoomUICollection::new(1);
         for mut room in rooms.each_mut() {
            let gfx = graphics::Gfx::build_rectangle_sample(&gl, &room.calc_vertices());
            room.gfx = Some(gfx);
@@ -97,11 +97,9 @@ impl SceneContext for MainSceneContext {
 
         if recr.is_ok() {
             match protocol::unpack(&buf) {
-                MessageType::RoomStatus { number, is_active } => {
+                MessageType::ServerOn => {
                     for mut room in self.rooms.each_mut() {
-                        if room.number() == number {
-                            if is_active { room.activate(); } else { room.deactivate(); }
-                        }
+                        room.activate();
                     }
                 }
 
@@ -117,7 +115,7 @@ impl SceneContext for MainSceneContext {
                 match self.rooms.find_by_coords(x as u32, 400 - y as u32) {
                     Some(room) => {
                         println!("Room {:?}", room.number());
-                        let msg = MessageType::MemberIn(room.number());
+                        let msg = MessageType::MemberIn;
                         let buf = protocol::pack(&msg);
                         self.network.send_to(&buf, "127.0.0.1:45000").unwrap();
 
