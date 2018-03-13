@@ -1,13 +1,15 @@
-use time::{SteadyTime};
+use time::SteadyTime;
 
 pub struct Timer {
     start: SteadyTime,
-    last_frame: SteadyTime
+    last_frame: SteadyTime,
 }
 
 pub fn new() -> Box<Timer> {
-    Box::new(Timer { start: SteadyTime::now(),
-                     last_frame: SteadyTime::now()})
+    Box::new(Timer {
+        start: SteadyTime::now(),
+        last_frame: SteadyTime::now(),
+    })
 }
 
 impl Timer {

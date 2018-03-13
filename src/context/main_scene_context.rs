@@ -25,7 +25,7 @@ pub struct MainSceneContext {
     rooms: Box<RoomUICollection>,
     switch_context: Option<RefSceneContext>,
     timer: Box<timers::Timer>,
-    network: Rc<UdpSocket>
+    network: Rc<UdpSocket>,
 }
 
 impl MainSceneContext {
@@ -38,23 +38,22 @@ impl MainSceneContext {
         let fsource = CString::new(smpl::YELLOW_FRAGMENT).unwrap();
         let fsb = fsource.to_bytes();
 
-        program.vertex_shader(vsb)
-               .fragment_shader(fsb)
-               .link();
+        program.vertex_shader(vsb).fragment_shader(fsb).link();
 
         let mut background_program = shaders::new(&gl);
 
         let fsource = CString::new(smpl::BACKGROUND_FRAGMENT).unwrap();
         let fsb = fsource.to_bytes();
 
-        background_program.vertex_shader(vsb)
-               .fragment_shader(fsb)
-               .link();
+        background_program
+            .vertex_shader(vsb)
+            .fragment_shader(fsb)
+            .link();
 
         let mut rooms = RoomUICollection::new(1);
         for mut room in rooms.each_mut() {
-           let gfx = graphics::Gfx::build_rectangle_sample(&gl, &room.calc_vertices());
-           room.gfx = Some(gfx);
+            let gfx = graphics::Gfx::build_rectangle_sample(&gl, &room.calc_vertices());
+            room.gfx = Some(gfx);
         }
 
         MainSceneContext {
@@ -66,7 +65,7 @@ impl MainSceneContext {
             rooms: rooms,
             switch_context: None,
             timer: timers::new(),
-            network: network.clone()
+            network: network.clone(),
         }
     }
 }
@@ -78,15 +77,19 @@ impl SceneContext for MainSceneContext {
             self.gl.Clear(COLOR_BUFFER_BIT);
 
             self.background_program.use_program();
-            self.background_program.uniform_matrix4fv("supermatrix", &self.matrix);
-            self.background_program.uniform1f("time", self.timer.elapsed() as f32 / 10000f32);
+            self.background_program
+                .uniform_matrix4fv("supermatrix", &self.matrix);
+            self.background_program
+                .uniform1f("time", self.timer.elapsed() as f32 / 10000f32);
             self.background.draw();
 
             self.program.use_program();
             self.program.uniform_matrix4fv("supermatrix", &self.matrix);
 
             for room in self.rooms.each() {
-                if room.is_active() { room.draw(); }
+                if room.is_active() {
+                    room.draw();
+                }
             }
         }
     }
@@ -97,20 +100,17 @@ impl SceneContext for MainSceneContext {
 
         if recr.is_ok() {
             match protocol::unpack(&buf) {
-                MessageType::ServerOn => {
-                    for mut room in self.rooms.each_mut() {
-                        room.activate();
-                    }
-                }
+                MessageType::ServerOn => for mut room in self.rooms.each_mut() {
+                    room.activate();
+                },
 
-                _ => ()
+                _ => (),
             }
         }
     }
 
     fn user_input(&mut self, event: Event) {
         match event {
-
             Event::MouseButtonUp { x, y, .. } => {
                 match self.rooms.find_by_coords(x as u32, 400 - y as u32) {
                     Some(room) => {
@@ -119,21 +119,24 @@ impl SceneContext for MainSceneContext {
                         let buf = protocol::pack(&msg);
                         self.network.send_to(&buf, "127.0.0.1:45000").unwrap();
 
-                        self.switch_context = Some(Rc::new(RefCell::new(RoomSceneContext::new(&self.gl, &self.network))));
+                        self.switch_context = Some(Rc::new(RefCell::new(RoomSceneContext::new(
+                            &self.gl,
+                            &self.network,
+                        ))));
                     }
 
-                    None => ()
+                    None => (),
                 }
             }
 
-            _ => ()
+            _ => (),
         }
     }
 
     fn switch_context(&self) -> Option<RefSceneContext> {
         match self.switch_context {
-            Some(ref context) => { Some(context.clone()) }
-            None => None
+            Some(ref context) => Some(context.clone()),
+            None => None,
         }
     }
 }

@@ -5,15 +5,15 @@ use gfx_gl::{Gl, LINE_STRIP};
 pub struct Circle {
     pos: Point2<f32>,
     r: f32,
-    gfx: Box<Gfx>
+    gfx: Box<Gfx>,
 }
 
 impl Circle {
     pub fn new(gl: &Gl, x: f32, y: f32, r: f32) -> Circle {
         Circle {
-            pos: Point2 { x: x, y: y},
+            pos: Point2 { x: x, y: y },
             r: r,
-            gfx: Box::new(Gfx::build_circle_sample(gl, r, 24))
+            gfx: Box::new(Gfx::build_circle_sample(gl, r, 24)),
         }
     }
 

@@ -8,17 +8,15 @@ pub struct Shader {
     pub id: u32,
     pub vs: u32,
     pub fs: u32,
-    gl: Box<Gl>
+    gl: Box<Gl>,
 }
 
 pub fn new(gl: &Gl) -> Box<Shader> {
     Box::new(Shader {
-        id: unsafe {
-            gl.CreateProgram()
-        },
+        id: unsafe { gl.CreateProgram() },
         gl: Box::new(gl.clone()),
         vs: 0,
-        fs: 0
+        fs: 0,
     })
 }
 
@@ -42,7 +40,12 @@ fn shader_log(gl: &Gl, id: &u32) {
 fn build_shader(gl: &Gl, type_: u32, source: &[u8]) -> u32 {
     unsafe {
         let id = gl.CreateShader(type_);
-        gl.ShaderSource(id, 1, &(source.as_ptr() as *const i8), &(source.len() as i32));
+        gl.ShaderSource(
+            id,
+            1,
+            &(source.as_ptr() as *const i8),
+            &(source.len() as i32),
+        );
         gl.CompileShader(id);
         id
     }
@@ -93,7 +96,8 @@ impl Shader {
     pub fn get_uniform_location(&self, name: &str) -> i32 {
         let uniform_name = CString::new(name).unwrap();
         unsafe {
-            self.gl.GetUniformLocation(self.id, uniform_name.to_bytes().as_ptr() as *const i8)
+            self.gl
+                .GetUniformLocation(self.id, uniform_name.to_bytes().as_ptr() as *const i8)
         }
     }
 
@@ -114,7 +118,8 @@ impl Shader {
     pub fn uniform_matrix4fv(&self, name: &str, matrix: &Matrix4<f32>) {
         unsafe {
             let location = self.get_uniform_location(name);
-            self.gl.UniformMatrix4fv(location, 1, FALSE, matrix.as_ptr());
+            self.gl
+                .UniformMatrix4fv(location, 1, FALSE, matrix.as_ptr());
         }
     }
 }

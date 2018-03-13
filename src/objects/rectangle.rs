@@ -1,12 +1,12 @@
 use cgmath::Point2;
 use graphics::Gfx;
 use gfx_gl::{Gl, TRIANGLE_STRIP};
-use collision::{Aabb2};
+use collision::Aabb2;
 
 pub struct Rectangle {
     pos: Point2<f32>,
     aabb: Aabb2<f32>,
-    gfx: Box<Gfx>
+    gfx: Box<Gfx>,
 }
 
 impl Rectangle {
@@ -16,14 +16,15 @@ impl Rectangle {
         let min = Point2::new(x - wd, y - hd);
         let max = Point2::new(x + wd, y + hd);
         let aabb = Aabb2::new(min, max);
-        let vertices: Vec<f32> = aabb.to_corners().iter().flat_map( |&point|
-            vec![point.x.clone() as f32, point.y.clone() as f32, 1.0]
-        ).collect();
+        let vertices: Vec<f32> = aabb.to_corners()
+            .iter()
+            .flat_map(|&point| vec![point.x.clone() as f32, point.y.clone() as f32, 1.0])
+            .collect();
 
         Rectangle {
             pos: Point2 { x: x, y: y },
             aabb: aabb,
-            gfx: Box::new(Gfx::build_rectangle_sample(gl, &vertices))
+            gfx: Box::new(Gfx::build_rectangle_sample(gl, &vertices)),
         }
     }
 

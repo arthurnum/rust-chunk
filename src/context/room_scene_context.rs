@@ -14,7 +14,7 @@ pub struct RoomSceneContext {
     program: Box<Shader>,
     matrix: Matrix4<f32>,
     gl: Box<Gl>,
-    network: Rc<UdpSocket>
+    network: Rc<UdpSocket>,
 }
 
 impl RoomSceneContext {
@@ -29,18 +29,20 @@ impl RoomSceneContext {
         let fsource = CString::new(smpl::YELLOW_FRAGMENT).unwrap();
         let fsb = fsource.to_bytes();
 
-        program.vertex_shader(vsb)
-               .fragment_shader(fsb)
-               .link();
+        program.vertex_shader(vsb).fragment_shader(fsb).link();
 
-        let translation = Matrix4::from_translation(Vector3 { x: 100f32, y: 100f32, z: 0f32 });
+        let translation = Matrix4::from_translation(Vector3 {
+            x: 100f32,
+            y: 100f32,
+            z: 0f32,
+        });
 
         RoomSceneContext {
             circle: circle,
             program: program,
             matrix: ortho(0.0, 600.0, 0.0, 400.0, -1.0, 1.0) * translation,
             gl: Box::new(gl.clone()),
-            network: network.clone()
+            network: network.clone(),
         }
     }
 }
@@ -60,5 +62,7 @@ impl SceneContext for RoomSceneContext {
 
     fn update(&mut self) {}
     fn user_input(&mut self, event: Event) {}
-    fn switch_context(&self) -> Option<RefSceneContext> { None }
+    fn switch_context(&self) -> Option<RefSceneContext> {
+        None
+    }
 }
