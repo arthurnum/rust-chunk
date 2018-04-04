@@ -23,6 +23,7 @@ mod rooms_ui;
 mod graphics;
 mod context;
 mod objects;
+mod input_state;
 
 fn ortho2d(left: f32, right: f32, bottom: f32, top: f32) -> Vec<f32> {
     let a1 = 2.0 / (right - left);
@@ -72,10 +73,6 @@ fn main() {
 
     let mut exit = false;
 
-    let mut timer = timers::new();
-
-    let mut ft = timer.frame_time();
-
     let socket = UdpSocket::bind("127.0.0.1:45001").expect("couldn't bind to address");
     socket
         .set_nonblocking(true)
@@ -93,11 +90,6 @@ fn main() {
         Rc::new(RefCell::new(MainSceneContext::new(&gl, &network_source)));
 
     while !exit {
-        active_scene_context.borrow_mut().update();
-        active_scene_context.borrow_mut().render();
-
-        ft = timer.frame_time();
-
         match event_pump.poll_event() {
             Some(event) => {
                 match event {
@@ -112,6 +104,9 @@ fn main() {
             }
             None => (),
         }
+
+        active_scene_context.borrow_mut().update();
+        active_scene_context.borrow_mut().render();
 
         window.gl_swap_window();
 

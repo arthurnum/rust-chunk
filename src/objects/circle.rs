@@ -4,6 +4,7 @@ use gfx_gl::{Gl, LINE_STRIP};
 
 pub struct Circle {
     pos: Point2<f32>,
+    pub gpos: Point2<f32>,
     r: f32,
     gfx: Box<Gfx>,
 }
@@ -12,6 +13,7 @@ impl Circle {
     pub fn new(gl: &Gl, x: f32, y: f32, r: f32) -> Circle {
         Circle {
             pos: Point2 { x: x, y: y },
+            gpos: Point2 { x: 0f32, y: 0f32 },
             r: r,
             gfx: Box::new(Gfx::build_circle_sample(gl, r, 24)),
         }
